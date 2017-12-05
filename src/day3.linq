@@ -2,17 +2,19 @@
 
 void Main()
 {
+	var cellNumberInput = 265149;
+	
 	var accessPort = new Coordinate(0, 0);
 	SpiralMemory.Memory[accessPort] = 1;
-		
+	
 	var generateGrid = new [] { Tuple.Create(accessPort, 1) }.Concat(NextDirection().SelectMany(sd => LineOfCoordinates(sd)));
 	
-	// Part 1
+	// Part 1 - Need to remove call to UpdateMemory() before uncommenting
 	// Func<int, Tuple<Coordinate, int>> nthElement = n => generateGrid.Skip(n - 1).First();
-	// ManhattanDistance(accessPort, nthElement(265149).Item1).Dump();
+	// accessPort.ManhattanDistance(nthElement(cellNumberInput).Item1).Dump();
 
 	// Part 2
-	var values = generateGrid.TakeWhile(coordValue => coordValue.Item2 < 265149).ToList();
+	var values = generateGrid.TakeWhile(coordValue => coordValue.Item2 < cellNumberInput).ToList();
 	
 	SpiralMemory.Memory.Values.Max().Dump();
 }
@@ -48,6 +50,11 @@ struct Coordinate
 		
 		throw new ApplicationException("Unknown direction.");
 	}
+
+	public int ManhattanDistance(Coordinate a)
+	{
+		return Math.Abs(X - a.X) + Math.Abs(Y - a.Y);
+	}
 }
 
 IEnumerable<Tuple<int, Direction>> NextDirection()
@@ -79,11 +86,6 @@ IEnumerable<Tuple<Coordinate, int>> LineOfCoordinates(Tuple<int, Direction> step
 	}
 }
 
-int ManhattanDistance(Coordinate a, Coordinate b)
-{
-	return Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y);
-}
-
 int UpdateMemory(Coordinate coordinate)
 {
 	var minusOnetoOne = Enumerable.Range(-1, 3);
@@ -98,4 +100,3 @@ int UpdateMemory(Coordinate coordinate)
 	
 	return SpiralMemory.Memory[coordinate];
 }
-
