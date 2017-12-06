@@ -71,22 +71,22 @@ public class MemoryBank : IComparable
 		return this;
 	}
 	
-    public int CompareTo(object obj) {
-        if (obj == null) return 1;
-
-        var otherMemoryBank = obj as MemoryBank;
-        if (otherMemoryBank != null && otherMemoryBank.Banks.Count == Banks.Count) 
-		{
-			var compare = Banks.Zip(otherMemoryBank.Banks, (t, o) => new { This = t, Other = o }).
-				SkipWhile(x => x.This == x.Other);
-			
-			if (!compare.Any())
-				return 0;
-			else
-				return compare.Select(x => x.This.CompareTo(x.Other)).First();			
-		}
-        else
-           throw new ArgumentException("Object is not valid");
+    public int CompareTo(object obj)
+	{
+		if (obj == null)
+			return 1;
+		
+		var otherMemoryBank = obj as MemoryBank;
+		if (otherMemoryBank == null || otherMemoryBank.Banks.Count != Banks.Count)
+			throw new ArgumentException("Object is not valid");
+		
+		var compare = Banks.Zip(otherMemoryBank.Banks, (t, o) => new { This = t, Other = o }).
+			SkipWhile(x => x.This == x.Other);
+	
+		if (!compare.Any())
+			return 0;
+		else
+			return compare.Select(x => x.This.CompareTo(x.Other)).First();
     }
 }
 	
