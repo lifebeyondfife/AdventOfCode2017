@@ -9,7 +9,7 @@ void Main()
 		var rootNode = FindRootNode(programInputs);
 		
 		// Part 1
-		rootNode.Name.Dump();
+		rootNode.Dump();
 		
 		// Part 2
 		CorrectWeight(rootNode, 0).Dump();
@@ -80,13 +80,12 @@ int CorrectWeight(Program node, int imbalance)
 	Func<IList<int>, bool> allEqual = list =>list.Zip(list.Skip(1), (a, b) => a == b).All(x => x);
 
 	var childrenWeights = node.Children.Select(c => c.TotalWeight).ToList();
+	
 	if (allEqual(childrenWeights))
-	{
 		return node.Weight + imbalance;
-	}
 	
 	var mean = childrenWeights.Average();
-	var majorityWeight = childrenWeights.OrderBy(w => w).First();
+	var majorityWeight = childrenWeights.OrderBy(w => Math.Abs(w - mean)).First();
 	var erroneousNode = node.Children.Single(c => c.TotalWeight != majorityWeight);
 	
 	return CorrectWeight(erroneousNode, majorityWeight - erroneousNode.TotalWeight);
