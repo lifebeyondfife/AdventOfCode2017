@@ -82,11 +82,10 @@ public class MemoryBank : IComparable
 		
 		var compare = Banks.Zip(otherMemoryBank.Banks, (t, o) => new { This = t, Other = o }).
 			SkipWhile(x => x.This == x.Other);
-	
+		
 		if (!compare.Any())
 			return 0;
 		else
 			return compare.Select(x => x.This.CompareTo(x.Other)).First();
-    }
+	}
 }
-	
