@@ -71,7 +71,7 @@ public class MemoryBank : IComparable
 		return this;
 	}
 	
-    public int CompareTo(object obj)
+	public int CompareTo(object obj)
 	{
 		if (obj == null)
 			return 1;

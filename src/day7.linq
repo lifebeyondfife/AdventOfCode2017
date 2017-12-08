@@ -9,7 +9,7 @@ void Main()
 		var rootNode = FindRootNode(programInputs);
 		
 		// Part 1
-		rootNode.Dump();
+		rootNode.Name.Dump();
 		
 		// Part 2
 		CorrectWeight(rootNode, 0).Dump();
