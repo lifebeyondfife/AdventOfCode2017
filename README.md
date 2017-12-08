@@ -11,3 +11,4 @@ I'm using [LinqPad](https://www.linqpad.net/) to make hacking in C# easier.
 + [Day 5](src/day5.linq)
 + [Day 6](src/day6.linq)
 + [Day 7](src/day7.linq)
++ [Day 8](src/day8.linq)
