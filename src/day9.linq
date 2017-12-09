@@ -4,7 +4,7 @@ void Main()
 {
 	using (var file = new StreamReader(File.OpenRead(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + ".\\day9.txt")))
 	{
-		var rawGroupInput = "{{{},{},{{}}}}";//GetRawGroupInput(file);
+		var rawGroupInput = GetRawGroupInput(file);
 		
 		int removedCharacterCount;
 		var groupInput = RemoveGarbage(rawGroupInput, out removedCharacterCount);
@@ -12,7 +12,7 @@ void Main()
 		// Part 1
 		int index = 0;
 		var rootGroupNode = new Group();
-		ConstructGroups(groupInput, ref index, rootGroupNode).Dump();
+		ConstructGroups(groupInput, ref index, rootGroupNode).TotalScore.Dump();
 		
 		// Part 2
 		removedCharacterCount.Dump();
