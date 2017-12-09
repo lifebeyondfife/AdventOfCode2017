@@ -107,7 +107,7 @@ public static Comparator StringToComparator(string comparator)
 			return Comparator.NotEqualTo;
 	}
 	
-	throw new ApplicationException("Unknown operator string.");
+	throw new ApplicationException("Unknown comparator string.");
 }
 
 public static bool Compare(int registerValue, Comparator comparator, int condition)
