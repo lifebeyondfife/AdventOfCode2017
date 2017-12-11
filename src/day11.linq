@@ -60,14 +60,12 @@ public struct Coordinate
 	
 	public int ManhattanDistance(Coordinate a)
 	{
-		var steps = Math.Abs(X - a.X);
-		
-		if (Math.Abs(Y - a.Y) > steps)
-		{
-			steps += (Math.Abs(Y - a.Y) - steps) / 2;
-		}
-		
-		return steps;
+		return ManhattanDistance(Math.Abs(X - a.X), Math.Abs(Y - a.Y));
+	}
+	
+	private static int ManhattanDistance(int absoluteX, int absoluteY)
+	{
+		return absoluteX + (absoluteY > absoluteX ? (absoluteY - absoluteX) / 2 : 0);
 	}
 }
 
