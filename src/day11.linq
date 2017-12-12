@@ -65,18 +65,17 @@ public struct Coordinate
 	
 	private static int ManhattanDistance(int absoluteX, int absoluteY)
 	{
-		return absoluteX + (absoluteY > absoluteX ? (absoluteY - absoluteX) / 2 : 0);
+		return absoluteX + Math.Max((absoluteY - absoluteX) / 2, 0);
 	}
 }
 
 public IEnumerable<Coordinate> GetRoute(IList<Direction> steps)
 {
-	var origin = new Coordinate(0, 0);
-
-	return steps.Select(s =>
-		{
-			var advance = origin.Apply(s);
-			origin = advance;
-			return advance;
-		});
+	var currentStep = new Coordinate(0, 0);
+	
+	foreach (var step in steps)
+	{
+		currentStep = currentStep.Apply(step);
+		yield return currentStep;
+	}
 }
