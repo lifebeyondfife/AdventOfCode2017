@@ -78,7 +78,7 @@ public class CycleList<T> : IEnumerable<T>
 		
 		Lookup = List.
 			Select((x, i) => new { X = x, I = i }).
-			ToDictionary(x => x.X, x => x.I);		
+			ToDictionary(x => x.X, x => x.I);
 	}
 	
 	public void Spin(int spin)
@@ -90,7 +90,7 @@ public class CycleList<T> : IEnumerable<T>
 	{
 		var firstValue = this[firstPosition];
 		var secondValue = this[secondPosition];
-
+		
 		this[firstPosition] = secondValue;
 		this[secondPosition] = firstValue;
 		
@@ -146,7 +146,7 @@ public class Instruction<T>
 
 public interface IExecute<T>
 {
-	void Apply(CycleList<T> cycleList);	
+	void Apply(CycleList<T> cycleList);
 }
 
 public class Spin<T> : IExecute<T>
