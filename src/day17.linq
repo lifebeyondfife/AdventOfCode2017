@@ -10,7 +10,7 @@ void Main()
 	imageMap.SkipWhile(x => x != 2017).Skip(1).First().Dump();
 	
 	// Part 2
-	AfterPosition(jump, 0, 50000000).Dump();
+	AfterZero(jump, 50000000).Dump();
 }
 
 // Define other methods and classes here
@@ -74,18 +74,18 @@ public CircularLinkedList<int> CalculateImageMap(int jump, int iterations)
 	return imageMap;
 }
 
-public int AfterPosition(int jump, int position, int iterations)
+public int AfterZero(int jump, int iterations)
 {
-	var afterPosition = 0;
+	var afterZero = 0;
 	var index = 0;
 	
 	foreach (var element in Enumerable.Range(1, iterations))
 	{
 		index = (((index + jump) % element) + 1) % element;
 		
-		if (index == position)
-			afterPosition = element;
+		if (index == 0)
+			afterZero = element;
 	}
 	
-	return afterPosition;
+	return afterZero;
 }
