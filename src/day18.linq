@@ -31,8 +31,8 @@ void Main()
 		var tokenSource = new CancellationTokenSource();
 		var token = tokenSource.Token;
 
-		var programA = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), 0), token);
-		var programB = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), 1), token);
+		var programA = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), token, 0), token);
+		var programB = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), token, 1), token);
 		
 		while (true)
 		{
@@ -47,10 +47,9 @@ void Main()
 			}
 		}
 		
-		tokenSource.Cancel();
-		
 		// Part 2
 		State.UpdateCountProgramB.Dump();
+		tokenSource.Cancel();
 	}
 }
 
@@ -156,15 +155,15 @@ public static class State
 		UpdateCountProgramB = 0;
 	}
 	
-	public static long Receive(int channel)
+	public static long Receive(CancellationToken token, int channel)
 	{
-		channel.Dump("Receive");
-		ProgramA.Dump("ProgramA");
-		ProgramB.Dump("ProgramB");
 		if (channel == 0)
 		{
 			while (ProgramA.Count == 0)
+			{
 				IsEmptyA = true;
+				token.ThrowIfCancellationRequested();
+			}
 			
 			lock (LockA)
 			{
@@ -175,7 +174,10 @@ public static class State
 		else
 		{
 			while (ProgramB.Count == 0)
+			{
 				IsEmptyB = true;
+				token.ThrowIfCancellationRequested();
+			}
 			
 			lock (LockB)
 			{
@@ -187,9 +189,6 @@ public static class State
 	
 	public static void Send(int channel, long value)
 	{
-		channel.Dump("Send");
-		ProgramA.Dump("ProgramA");
-		ProgramB.Dump("ProgramB");
 		if (channel == 0)
 		{
 			lock (LockA)
@@ -209,14 +208,14 @@ public static class State
 	}
 }
 
-public long ExecuteParallel(IList<Tuple<Command, List<string>>> instructions, IDictionary<string, long> registers, int channel)
+public long ExecuteParallel(IList<Tuple<Command, List<string>>> instructions, IDictionary<string, long> registers, CancellationToken token, int channel)
 {
 	registers["p"] = channel;
 	var nextInstruction = 0;
 	Func<string, long> val = v => Value(registers, v);
 	
 	Action<string> snd = x => State.Send(channel, val(x));
-	Action<string> rcv = x => registers[x] = State.Receive(channel);
+	Action<string> rcv = x => registers[x] = State.Receive(token, channel);
 	Action<string, string> set = (x, y) => registers[x] = val(y);
 	Action<string, string> add = (x, y) => registers[x] += val(y);
 	Action<string, string> mul = (x, y) => registers[x] *= val(y);
