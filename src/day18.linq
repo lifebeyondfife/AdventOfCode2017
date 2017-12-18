@@ -1,7 +1,4 @@
 <Query Kind="Program">
-  <Reference>&lt;RuntimeDirectory&gt;\System.Threading.dll</Reference>
-  <Reference>&lt;RuntimeDirectory&gt;\System.Threading.Tasks.dll</Reference>
-  <Reference>&lt;RuntimeDirectory&gt;\System.Threading.Tasks.Parallel.dll</Reference>
   <Namespace>System.Threading.Tasks</Namespace>
 </Query>
 
@@ -10,46 +7,12 @@ void Main()
 	using (var file = new StreamReader(File.OpenRead(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + ".\\day18.txt")))
 	{
 		var instructions = GetInstructions(file).ToList();
-//		var instructions = new Tuple<Command, List<string>> [] 
-//			{
-//				Tuple.Create(Command.snd, new [] {"1"}.ToList()),
-//				Tuple.Create(Command.snd, new [] {"2"}.ToList()),
-//				Tuple.Create(Command.snd, new [] {"p"}.ToList()),
-//				Tuple.Create(Command.rcv, new [] {"a"}.ToList()),
-//				Tuple.Create(Command.rcv, new [] {"b"}.ToList()),
-//				Tuple.Create(Command.rcv, new [] {"c"}.ToList()),
-//				Tuple.Create(Command.rcv, new [] {"d"}.ToList())
-//			};
 
-		// 13715 is too high
-		
 		// Part 1
-		//var recoveredSound = ExecuteSerial(instructions, GetRegisters(instructions)).Dump();
-		
-		State.Initialise();
-		
-		var tokenSource = new CancellationTokenSource();
-		var token = tokenSource.Token;
-
-		var programA = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), token, 0), token);
-		var programB = Task.Factory.StartNew(() => ExecuteParallel(instructions, GetRegisters(instructions), token, 1), token);
-		
-		while (true)
-		{
-			if (State.IsEmptyA && State.IsEmptyB)
-			{
-				State.IsEmptyA.Dump();
-				State.IsEmptyB.Dump();
-				Thread.Sleep(5000);
-				
-				if (State.IsEmptyA && State.IsEmptyB)
-					break;
-			}
-		}
+		var recoveredSound = ExecuteSerial(instructions, GetRegisters(instructions)).Dump();
 		
 		// Part 2
-		State.UpdateCountProgramB.Dump();
-		tokenSource.Cancel();
+		SentInstructions(instructions).Dump();
 	}
 }
 
@@ -119,12 +82,12 @@ public long ExecuteSerial(IList<Tuple<Command, List<string>>> instructions, IDic
 		
 		switch (instruction.Item1)
 		{
-			case Command.add:	add(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.jgz:	jgz(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.mod:	mod(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.mul:	mul(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.set:	set(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.snd:	snd(instruction.Item2[0]); val(instruction.Item2[0]); break;
+			case Command.add:	add(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.jgz:	jgz(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.mod:	mod(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.mul:	mul(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.set:	set(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.snd:	snd(instruction.Item2[0]); break;
 			
 			case Command.rcv:
 				if (rcv(instruction.Item2[0]))
@@ -134,96 +97,60 @@ public long ExecuteSerial(IList<Tuple<Command, List<string>>> instructions, IDic
 	}
 }
 
-public static class State
+public int SentInstructions(IList<Tuple<Command, List<string>>> instructions)
 {
-	private static Queue<long> ProgramA { get; set; }
-	private static Queue<long> ProgramB { get; set; }
-	private static Object LockA = new Object();
-	private static Object LockB = new Object();
-	public static bool IsEmptyA { get; private set; }
-	public static bool IsEmptyB { get; private set; }
-
-	public static int UpdateCountProgramB { get; private set; }
+	var registers0 = GetRegisters(instructions);
+	var registers1 = GetRegisters(instructions);
 	
-	public static void Initialise()
-	{
-		ProgramA = new Queue<long>();
-		ProgramB = new Queue<long>();
-		IsEmptyA = false;
-		IsEmptyB = false;
-		
-		UpdateCountProgramB = 0;
-	}
+	registers0["p"] = 0;
+	registers1["p"] = 1;
 	
-	public static long Receive(CancellationToken token, int channel)
-	{
-		if (channel == 0)
-		{
-			while (ProgramA.Count == 0)
-			{
-				IsEmptyA = true;
-				token.ThrowIfCancellationRequested();
-			}
-			
-			lock (LockA)
-			{
-				IsEmptyA = false;
-				return ProgramA.Dequeue();
-			}
-		}
-		else
-		{
-			while (ProgramB.Count == 0)
-			{
-				IsEmptyB = true;
-				token.ThrowIfCancellationRequested();
-			}
-			
-			lock (LockB)
-			{
-				IsEmptyB = false;
-				return ProgramB.Dequeue();
-			}
-		}
-	}
+	var queue0 = new Queue<long>();
+	var queue1 = new Queue<long>();
 	
-	public static void Send(int channel, long value)
+	var sent0 = 0;
+	var sent1 = 0;
+	
+	var nextInstruction0 = 0;
+	var nextInstruction1 = 0;
+	
+	do
 	{
-		if (channel == 0)
-		{
-			lock (LockA)
-			{
-				ProgramA.Enqueue(value);
-			}
-		}
-		else
-		{
-			lock (LockB)
-			{
-				++UpdateCountProgramB;
-				UpdateCountProgramB.Dump();
-				ProgramB.Enqueue(value);
-			}
-		}
-	}
+		ExecuteParallel(instructions, registers0, queue0, queue1, ref sent0, ref nextInstruction0);
+		ExecuteParallel(instructions, registers1, queue1, queue0, ref sent1, ref nextInstruction1);
+	} while (queue0.Any() || queue1.Any());
+	
+	return sent1;
 }
 
-public long ExecuteParallel(IList<Tuple<Command, List<string>>> instructions, IDictionary<string, long> registers, CancellationToken token, int channel)
+public void ExecuteParallel(
+	IList<Tuple<Command, List<string>>> instructions,
+	IDictionary<string, long> registers,
+	Queue<long> sendQueue,
+	Queue<long> receiveQueue,
+	ref int sent,
+	ref int nextInstruction)
 {
-	registers["p"] = channel;
-	var nextInstruction = 0;
 	Func<string, long> val = v => Value(registers, v);
 	
-	Action<string> snd = x => State.Send(channel, val(x));
-	Action<string> rcv = x => registers[x] = State.Receive(token, channel);
+	Action<string> snd = x => sendQueue.Enqueue(val(x));
+	Func<string, bool> rcv = x =>
+		{
+			if (!receiveQueue.Any())
+				return false;
+			
+			registers[x] = receiveQueue.Dequeue();
+			return true;
+		};
 	Action<string, string> set = (x, y) => registers[x] = val(y);
 	Action<string, string> add = (x, y) => registers[x] += val(y);
 	Action<string, string> mul = (x, y) => registers[x] *= val(y);
 	Action<string, string> mod = (x, y) => registers[x] %= val(y);
-	Action<string, string> jgz = (x, y) =>
+	Func<string, string, int> jgz = (x, y) =>
 		{
 			if (val(x) > 0)
-				nextInstruction = nextInstruction + (int) val(y) - 1;
+				return (int) val(y) - 1;
+			return 0;
 		};
 	
 	while (true)
@@ -232,13 +159,13 @@ public long ExecuteParallel(IList<Tuple<Command, List<string>>> instructions, ID
 		
 		switch (instruction.Item1)
 		{
-			case Command.add:	add(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.jgz:	jgz(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.mod:	mod(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.mul:	mul(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.set:	set(instruction.Item2[0], instruction.Item2[1]); val(instruction.Item2[0]); break;
-			case Command.snd:	snd(instruction.Item2[0]); break;
-			case Command.rcv:   rcv(instruction.Item2[0]); break;
+			case Command.add:	add(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.jgz:	nextInstruction += jgz(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.mod:	mod(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.mul:	mul(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.set:	set(instruction.Item2[0], instruction.Item2[1]); break;
+			case Command.snd:	snd(instruction.Item2[0]); ++sent; break;
+			case Command.rcv:   if (!rcv(instruction.Item2[0])) { --nextInstruction; return; } break;
 		}
 	}
 }
