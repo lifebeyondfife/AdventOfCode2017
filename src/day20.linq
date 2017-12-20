@@ -4,55 +4,20 @@ void Main()
 {
 	using (var file = new StreamReader(File.OpenRead(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + ".\\day20.txt")))
 	{
-		var particles = GetParticles(file).ToList();
-		
-		/*var particles = new []
-		{
-			new Particle(0, new Vector(-6, 0, 0), new Vector(3, 0, 0), new Vector(0, 0, 0)),
-			new Particle(1, new Vector(-4, 0, 0), new Vector(2, 0, 0), new Vector(0, 0, 0)),
-			new Particle(2, new Vector(-2, 0, 0), new Vector(1, 0, 0), new Vector(0, 0, 0)),
-			new Particle(3, new Vector(3, 0, 0), new Vector(-1, 0, 0), new Vector(0, 0, 0)),
-		}.ToList();*/
-		
-		particles.Count.Dump();
+		IList<Particle> particles = GetParticles(file).ToList();
+
 		var origin = new Vector(0L, 0L, 0L);
 		
 		// Part 1
-//		particles.
-//			Select(p => new { p.Index, Position = p.Position(100000) }).
-//			OrderBy(p => p.Position.ManhattanDistance(origin)).
-//			First().
-//			Index.
-//			Dump();
+		particles.
+			Select(p => new { p.Index, Position = p.Position(1000) }).
+			OrderBy(p => p.Position.ManhattanDistance(origin)).
+			First().
+			Index.
+			Dump();
 		
 		// Part 2
-		
-		var p195 = particles.Single(p => p.Index == 195).Dump();
-		var p196 = particles.Single(p => p.Index == 196).Dump();
-		
-		foreach (var step in Enumerable.Range(0, 9))
-		{
-			p195.Position(step).Dump("P195 at " + step);
-			p196.Position(step).Dump("P196 at " + step);
-
-			var collisions = new Dictionary<Vector, IList<Particle>>();
-			
-			foreach (var particle in particles)
-			{
-				var position = particle.Position(step);
-				
-				if (collisions.ContainsKey(position))
-				{
-					collisions[position].Add(particle);
-					collisions[position].Dump("Duplicate at time step " + step);
-				}
-				else
-					collisions[position] = new List<Particle>(new [] { particle });
-			}
-						
-			foreach (var collided in collisions.Select(kvp => kvp.Value).Where(l => l.Count > 1).SelectMany(x => x))
-				particles.Remove(collided.Dump(string.Format("Collision at time {0}", step)));
-		}
+		Simulate(ref particles);
 		
 		particles.Count.Dump();
 	}
@@ -94,14 +59,21 @@ public struct Vector
 	{
 		return Math.Abs(X - other.X) + Math.Abs(Y - other.Y) + Math.Abs(Z - other.Z);
 	}
+	
+	public static Vector operator+(Vector a, Vector b)
+	{
+		return new Vector(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+	}
 }
 
 public class Particle
 {
 	public Vector Start { get; private set; }
 	public int Index { get; private set; }
-	public Vector Velocity { get; set; }
-	public Vector Acceleration { get; set; }
+	public Vector Current { get; private set; }
+	
+	private Vector Velocity { get; set; }
+	private Vector Acceleration { get; set; }
 	
 	public Particle(int index, Vector start, Vector velocity, Vector acceleration)
 	{
@@ -109,16 +81,43 @@ public class Particle
 		Start = start;
 		Velocity = velocity;
 		Acceleration = acceleration;
+		Current = Start;
 	}
 	
 	public Vector Position(long time)
 	{
-		Func<long, long, long, long> distance = (u, a, t) => u + a * t;
+		Func<long, long, long, long> distance = (u, a, t) => (u * t) + (a * t * t) / 2;
 		
 		return new Vector(
 			Start.X + distance(Velocity.X, Acceleration.X, time),
 			Start.Y + distance(Velocity.Y, Acceleration.Y, time),
 			Start.Z + distance(Velocity.Z, Acceleration.Z, time)
 		);
+	}
+	
+	public void Move()
+	{
+		Velocity += Acceleration;
+		Current += Velocity;
+	}
+}
+
+public void Simulate(ref IList<Particle> particles)
+{
+	foreach (var step in Enumerable.Range(0, 100))
+	{
+		var collisions = new Dictionary<Vector, IList<Particle>>();
+		foreach (var particle in particles)
+		{
+			particle.Move();
+			
+			if (collisions.ContainsKey(particle.Current))
+				collisions[particle.Current].Add(particle);
+			else
+				collisions[particle.Current] = new List<Particle>(new [] { particle });
+		}
+		
+		foreach (var collided in collisions.Select(kvp => kvp.Value).Where(l => l.Count > 1).SelectMany(x => x))
+			particles.Remove(collided);
 	}
 }
