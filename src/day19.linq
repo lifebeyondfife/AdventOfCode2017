@@ -48,13 +48,12 @@ public string Traverse(char[][] map, ref int steps)
 		{
 			switch (dir)
 			{
-				case Dir.up: --y; break;
-				case Dir.down: ++y; break;
-				case Dir.left: --x; break;
-				case Dir.right: ++x; break;
+				case Dir.up:	return map[--y][x];
+				case Dir.down:	return map[++y][x];
+				case Dir.left:	return map[y][--x];
+				case Dir.right:	return map[y][++x];
+				default:	throw new Exception("Unknown direction.");
 			}
-			
-			return map[y][x];
 		};
 	
 	Func<Dir, Dir> nextDirection = dir =>
@@ -93,6 +92,3 @@ public string Traverse(char[][] map, ref int steps)
 	
 	return route;
 }
-
-
-
