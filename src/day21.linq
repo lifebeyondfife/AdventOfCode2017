@@ -69,6 +69,9 @@ public class Rule
 	
 	public bool Match(Image<byte> image)
 	{
+		if (image.Count != Condition.Count || image.Count(x => x != 0) != Condition.Count(x => x != 0))
+			return false;
+		
 		foreach (var permuation in Group.Orbit(new [] { image }))
 		{
 			if (permuation.Zip(Condition, (a, b) => a == b).All(x => x))

@@ -4,134 +4,48 @@ void Main()
 {
 	using (var file = new StreamReader(File.OpenRead(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + ".\\day22.txt")))
 	{
-		var grid = new Grid<bool>(GetGridStream(file));
-		//var grid = new Grid<bool>(new [] { false, false, true, true, false, false, false, false, false });
-		
-		//5213 is too low
-		//5214 is too low
+		var grid = GetGridStream(file);
 		
 		var burstIterations = 10000;
 		int causedInfectionCount;
 		
-		Simulate(grid, burstIterations, out causedInfectionCount);
+		SimulateSimple(grid, burstIterations, out causedInfectionCount);
 		
-		causedInfectionCount.Dump();
+		// Part 1
+		causedInfectionCount.Dump();		
+	}
+
+	using (var file = new StreamReader(File.OpenRead(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + ".\\day22.txt")))
+	{
+		var grid = GetGridStream(file);
+		
+		var burstIterations = 10000000;
+		int causedInfectionCount;
+		
+		SimulateComplex(grid, burstIterations, out causedInfectionCount);
+		
+		// Part 2
+		causedInfectionCount.Dump();		
 	}
 }
 
 // Define other methods and classes here
-IEnumerable<bool> GetGridStream(StreamReader file)
+IDictionary<Coordinate, Virus> GetGridStream(StreamReader file)
 {
-	foreach (var boolean in Enumerable.Repeat(false, 27))
-		yield return boolean;
+	var grid = new Dictionary<Coordinate, Virus>();
+	var y = -12;
+	
 	while (!file.EndOfStream)
 	{
-		yield return false;
+		var line = file.ReadLine();
+		for (var x = -12; x <= 12; ++x)
+			if (line[x + 12] == '#')
+				grid[new Coordinate(x, y)] = Virus.Infected;
 		
-		foreach (var character in file.ReadLine())
-			yield return character == '#' ? true : false;
-		
-		yield return false;
-	}
-	foreach (var boolean in Enumerable.Repeat(false, 27))
-		yield return boolean;
-}
-
-public class Grid<T> where T : struct
-{
-	public List<T> Buffer { get; set; }
-	private int Offset { get; set; }
-	private int EdgeLength { get; set; }
-	
-	public Grid(IEnumerable<T> buffer)
-	{
-		Buffer = buffer.ToList();
-		EdgeLength = (int) Math.Sqrt(Buffer.Count);
-		Offset = EdgeLength / 2;
+		++y;
 	}
 	
-	public Grid(int size) :
-		this(new List<T>(Enumerable.Repeat(new T(), size)))
-	{
-	}
-	
-	private void CheckBounds(int i, int j)
-	{
-		if ((i + Offset) * EdgeLength + (j + Offset) < 0 ||
-			(i + Offset) * EdgeLength + (j + Offset) >= Buffer.Count)
-			DoubleBuffer();
-	}
-	
-	private void DoubleBuffer()
-	{
-	//	Console.WriteLine("doubling the buffer");
-		var newGrid = new Grid<T>(4 * EdgeLength * EdgeLength);
-		
-		for (var i = -Offset; i <= Offset; ++i)
-		{
-			for (var j = -Offset; j <= Offset; ++j)
-			{
-				if ((i + Offset) * EdgeLength + (j + Offset) < 0 ||
-					(i + Offset) * EdgeLength + (j + Offset) >= Buffer.Count)
-						continue;
-			
-				newGrid[i, j] = this[i, j];
-			}
-		}
-		
-		Buffer = newGrid.Buffer;
-		Offset = newGrid.Offset;
-		EdgeLength = newGrid.EdgeLength;
-	}
-	
-	public void PrintBuffer()
-	{
-		var @default = new T();
-		
-		foreach (var group in Buffer.
-			Select((x, i) => new { X = x, I = i }).
-			GroupBy(xi => xi.I / EdgeLength))
-				Console.WriteLine(group.
-					Select(xi => !xi.X.Equals(@default) ? "#" : ".").
-					Aggregate((x, y) => x + y));
-		
-//		for (var i = -Offset; i <= Offset; ++i)
-//		{
-//			if (i == Offset && Buffer.Count % 2 == 0)
-//				continue;
-//			
-//			for (var j = -Offset; j <= Offset; ++j)
-//			{
-//				if (j == Offset && Buffer.Count % 2 == 0)
-//					continue;
-//				
-//				if (x == i && y == j)
-//					if (!this[i, j].Equals(@default))
-//						Console.Write("X");
-//					else
-//						Console.Write("x");
-//				else
-//					Console.Write(!this[i, j].Equals(@default) ? "#" : ".");
-//			}
-//			Console.WriteLine();
-//		}
-//		Console.WriteLine();
-	}
-	
-	public T this[int i, int j]
-	{
-		get
-		{
-			CheckBounds(i, j);
-			return Buffer[(i + Offset) * EdgeLength + (j + Offset)];
-		}
-		
-		set
-		{
-			CheckBounds(i, j);
-			Buffer[(i + Offset) * EdgeLength + (j + Offset)] = value;
-		}
-	}
+	return grid;
 }
 
 public enum Direction
@@ -142,11 +56,30 @@ public enum Direction
 	right
 }
 
-public void Simulate(Grid<bool> grid, int burstIterations, out int causedInfectionCount)
+public struct Coordinate
+{
+	public int X;
+	public int Y;
+	
+	public Coordinate(int x, int y)
+	{
+		X = x;
+		Y = y;
+	}
+}
+
+public enum Virus
+{
+	Clean,
+	Weakened,
+	Infected,
+	Flagged
+}
+
+public void SimulateSimple(IDictionary<Coordinate, Virus> grid, int burstIterations, out int causedInfectionCount)
 {
 	causedInfectionCount = 0;
-	var x = 0;
-	var y = 0;
+	var coordinate = new Coordinate(0, 0);
 	var direction = Direction.up;
 	
 	Func<Direction, Direction> turnLeft = dir =>
@@ -179,27 +112,98 @@ public void Simulate(Grid<bool> grid, int burstIterations, out int causedInfecti
 	{
 		switch (dir)
 		{
-			case Direction.up: --y; break;
-			case Direction.left: --x; break;
-			case Direction.down: ++y; break;
-			case Direction.right: ++x; break;
+			case Direction.up: --coordinate.Y; break;
+			case Direction.left: --coordinate.X; break;
+			case Direction.down: ++coordinate.Y; break;
+			case Direction.right: ++coordinate.X; break;
 		}
 	};
 	
 	while (--burstIterations >= 0)
 	{
-		direction = grid[y, x] ? turnRight(direction) : turnLeft(direction);
+		direction = grid.ContainsKey(coordinate) ? turnRight(direction) : turnLeft(direction);
 		
-		if (!grid[y, x])
+		if (!grid.ContainsKey(coordinate))
 		{
 			++causedInfectionCount;
-			grid[y, x] = true;
+			grid[coordinate] = Virus.Infected;
 		}
 		else
-			grid[y, x] = false;
+			grid.Remove(coordinate);
 		
 		advance(direction);
 	}
 }
 
-
+public void SimulateComplex(IDictionary<Coordinate, Virus> grid, int burstIterations, out int causedInfectionCount)
+{
+	causedInfectionCount = 0;
+	var coordinate = new Coordinate(0, 0);
+	var direction = Direction.up;
+	
+	Func<Direction, Direction> turnLeft = dir =>
+	{
+		switch (dir)
+		{
+			case Direction.up: return Direction.left;
+			case Direction.left: return Direction.down;
+			case Direction.down: return Direction.right;
+			case Direction.right: return Direction.up;
+		}
+		
+		throw new Exception("Unknown direction.");	
+	};
+	
+	Func<Direction, Direction> turnRight = dir =>
+	{
+		switch (dir)
+		{
+			case Direction.up: return Direction.right;
+			case Direction.left: return Direction.up;
+			case Direction.down: return Direction.left;
+			case Direction.right: return Direction.down;
+		}
+		
+		throw new Exception("Unknown direction.");	
+	};
+	
+	Action<Direction> advance = dir =>
+	{
+		switch (dir)
+		{
+			case Direction.up: --coordinate.Y; break;
+			case Direction.left: --coordinate.X; break;
+			case Direction.down: ++coordinate.Y; break;
+			case Direction.right: ++coordinate.X; break;
+		}
+	};
+	
+	while (--burstIterations >= 0)
+	{
+		if (!grid.ContainsKey(coordinate) || grid[coordinate] == Virus.Clean)
+		{
+			direction = turnLeft(direction);
+			grid[coordinate] = Virus.Weakened;
+			advance(direction);
+			continue;
+		}
+		
+		switch (grid[coordinate])
+		{
+			case Virus.Weakened:
+				++causedInfectionCount;
+				grid[coordinate] = Virus.Infected;
+				break;
+			case Virus.Infected:
+				direction = turnRight(direction);
+				grid[coordinate] = Virus.Flagged;
+				break;
+			case Virus.Flagged:
+				direction = turnLeft(turnLeft(direction));
+				grid[coordinate] = Virus.Clean;
+				break;
+		}
+		
+		advance(direction);
+	}
+}
