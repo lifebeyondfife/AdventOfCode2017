@@ -141,7 +141,6 @@ public int MachineCode(bool isDebugMode)
 				if (g == 0)
 					f = 0;
 				g = ++e - b;
-				g = 0;
 			} while (g != 0);
 			g = ++d - b;
 		} while (g != 0);
