@@ -92,30 +92,20 @@ public int ReverseEngineeredMachineCode(int seed)
 	var lowerBound = (seed * 100) + 100000;
 	var upperBound = lowerBound + 17000;
 	
-	var nonPrimeCount = 0;
-	var primes = new Dictionary<int, bool>();
-	
-	for (var i = lowerBound; i <= upperBound; ++i)
-	{
-		primes[i] = true;
-	}
+	var primes = Enumerable.Range(lowerBound, upperBound - lowerBound + 1).
+		ToDictionary(x => x, x => true);
 	
 	foreach (var factor in Enumerable.Range(2, (int) Math.Sqrt(upperBound)))
 	{
 		var innerFactor = 1;
 		while (innerFactor * factor < upperBound)
-		{
 			primes[++innerFactor * factor] = false;
-		}
 	}
 	
-	for (var i = lowerBound; i <= upperBound; i += 17)
-	{
-		if (!primes[i])
-			++nonPrimeCount;
-	}
-	
-	return nonPrimeCount;
+	return Enumerable.Range(0, 1001).
+		Select(x => lowerBound + 17 * x).
+		Where(x => !primes[x]).
+		Count();
 }
 
 public int MachineCode(bool isDebugMode)
