@@ -10,7 +10,7 @@ void Main()
 		var multiplesCount = Execute(instructions, GetRegisters(instructions)).Dump();
 
 		// Part 2
-		var nonPrimes = ReverseEngineeredMachineCode().Dump();
+		var nonPrimes = ReverseEngineeredMachineCode(57).Dump();
 	}
 }
 
@@ -87,9 +87,9 @@ public long Execute(IList<Tuple<Command, List<string>>> instructions, IDictionar
 	return multiplierCount;
 }
 
-public int ReverseEngineeredMachineCode()
+public int ReverseEngineeredMachineCode(int seed)
 {
-	var lowerBound = (57 * 100) + 100000;
+	var lowerBound = (seed * 100) + 100000;
 	var upperBound = lowerBound + 17000;
 	
 	var nonPrimeCount = 0;
