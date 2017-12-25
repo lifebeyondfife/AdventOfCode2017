@@ -10,7 +10,7 @@ void Main()
 		var multiplesCount = Execute(instructions, GetRegisters(instructions)).Dump();
 
 		// Part 2
-		var nonPrimes = ReverseEngineeredMachineCode(57).Dump();
+		var nonPrimes = ReverseEngineeredAssemblyCode(57).Dump();
 	}
 }
 
@@ -50,16 +50,10 @@ public long Value(IDictionary<string, long> registers, string reference)
 
 public long Execute(IList<Tuple<Command, List<string>>> instructions, IDictionary<string, long> registers)
 {
-	var lastPlayedSound = 0L;
 	var nextInstruction = 0;
 	
 	Func<string, long> val = v => Value(registers, v);
 	
-	Action<string> snd = s => 
-		{
-			if (val(s) > 0)
-				lastPlayedSound = val(s);
-		};
 	Action<string, string> set = (x, y) => registers[x] = val(y);
 	Action<string, string> sub = (x, y) => registers[x] -= val(y);
 	Action<string, string> mul = (x, y) => registers[x] *= val(y);
@@ -87,7 +81,7 @@ public long Execute(IList<Tuple<Command, List<string>>> instructions, IDictionar
 	return multiplierCount;
 }
 
-public int ReverseEngineeredMachineCode(int seed)
+public int ReverseEngineeredAssemblyCode(int seed)
 {
 	var lowerBound = (seed * 100) + 100000;
 	var upperBound = lowerBound + 17000;
@@ -108,7 +102,7 @@ public int ReverseEngineeredMachineCode(int seed)
 		Count();
 }
 
-public int MachineCode(bool isDebugMode)
+public int AssemblyCode(bool isDebugMode)
 {
 	var a = isDebugMode ? 0 : 1;
 	var b = 0;
